@@ -3,8 +3,8 @@ name: Daily Investment Brief
 on:
   schedule:
     # 卡尔加里 7:30 AM MDT (夏令时 Mar-Nov) = 13:30 UTC
-    - cron: '30 13 * * 1-5'
-    # 卡尔加里 7:30 AM MST (冬令时 Nov-Mar) = 14:30 UTC
+    - cron: '0 14 * * 1-5'   # 8:00 AM MDT
+    # 冬令时改成 '0 15 * * 1-5'
     # 冬天把上面那行改成 '30 14 * * 1-5' 即可
   workflow_dispatch:          # 也可以手动触发
 
