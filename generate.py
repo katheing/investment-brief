@@ -78,25 +78,49 @@ RISKS = [
     {"icon":"🔥","title":"NBIS 高烧钱 + 高估值风险",    "body":"P/S 70x，Q4 净亏 $250M，LT 债务 $4.1B，每季 CapEx 超 $2B。若 AI 云需求放缓，高估值可能快速回调。"},
 ]
 
-# ── Fetch live stock prices via yfinance fast_info ────────────────────────────
-live_prices = {}  # sym -> (price, pct_change)
+# ── Fetch live prices ─────────────────────────────────────────────────────────
+live_prices = {}  # yfSym -> (price, ch24_pct)
+ch7_map     = {}  # yfSym -> ch7_pct
 
 if HAS_YF:
-    yf_syms = [t["yf"] for t in TICKERS if t.get("yf")]
-    print(f"Fetching yfinance fast_info for: {yf_syms}")
-    for ysym in yf_syms:
+    # All yfinance symbols — HUT.TO fetched independently (CAD, different from HUT USD)
+    stock_syms = list({t["yf"] for t in TICKERS if t.get("yf")}) + ["HUT.TO"]
+
+    # 1. Current price + 24h change via fast_info (updates ~15 min during market hours)
+    print("Fetching current prices via fast_info...")
+    for ysym in stock_syms:
         try:
-            fi = yf.Ticker(ysym).fast_info
+            fi         = yf.Ticker(ysym).fast_info
             price      = fi.last_price
             prev_close = fi.previous_close
-            if price and price > 0 and prev_close and prev_close > 0:
-                pct = (price - prev_close) / prev_close * 100
-                live_prices[ysym] = (price, pct)
-                print(f"  {ysym}: ${price:.2f} ({pct:+.2f}%)")
-            elif price and price > 0:
-                live_prices[ysym] = (price, None)
+            if price and price > 0:
+                ch24 = (price - prev_close) / prev_close * 100 if (prev_close and prev_close > 0) else None
+                live_prices[ysym] = (price, ch24)
+                tag = f"{ch24:+.2f}%" if ch24 is not None else "n/a"
+                print(f"  {ysym}: {price:.2f}  24h={tag}")
         except Exception as e:
             print(f"  {ysym} fast_info error: {e}")
+
+    # 2. 7-day change via 10-day daily history
+    print("Fetching 7-day history...")
+    try:
+        raw    = yf.download(stock_syms, period="10d", progress=False, auto_adjust=True)
+        closes = raw["Close"]
+        # yfinance returns a Series (not DataFrame) when only 1 symbol — normalise
+        if hasattr(closes, "squeeze") and len(stock_syms) == 1:
+            closes = closes.to_frame(name=stock_syms[0])
+        for ysym in stock_syms:
+            try:
+                series = (closes[ysym] if ysym in closes.columns else closes.squeeze()).dropna()
+                if len(series) >= 6:
+                    p_now = live_prices.get(ysym, (None,))[0] or float(series.iloc[-1])
+                    p_7d  = float(series.iloc[-6])   # ~5 trading days ≈ 1 calendar week
+                    ch7_map[ysym] = (p_now - p_7d) / p_7d * 100
+                    print(f"  {ysym} 7d: {ch7_map[ysym]:+.2f}%")
+            except Exception as e:
+                print(f"  {ysym} 7d error: {e}")
+    except Exception as e:
+        print(f"7-day history download failed: {e}")
 
 # ── Fetch live crypto via CoinGecko (free, no key) ────────────────────────────
 if HAS_REQ:
@@ -104,14 +128,11 @@ if HAS_REQ:
     try:
         url = ("https://api.coingecko.com/api/v3/simple/price"
                "?ids=bitcoin,ethereum&vs_currencies=usd&include_24hr_change=true")
-        resp = requests.get(url, timeout=15,
-                            headers={"User-Agent": "Mozilla/5.0"})
+        resp = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
         cg = resp.json()
-        live_prices["BTC"] = (cg["bitcoin"]["usd"],   cg["bitcoin"].get("usd_24h_change"))
-        live_prices["ETH"] = (cg["ethereum"]["usd"],  cg["ethereum"].get("usd_24h_change"))
-        btc_p = cg["bitcoin"]["usd"]
-        eth_p = cg["ethereum"]["usd"]
-        print(f"  BTC: ${btc_p:,.0f}  ETH: ${eth_p:,.0f}")
+        live_prices["BTC"] = (cg["bitcoin"]["usd"],  cg["bitcoin"].get("usd_24h_change"))
+        live_prices["ETH"] = (cg["ethereum"]["usd"], cg["ethereum"].get("usd_24h_change"))
+        print(f"  BTC: ${cg['bitcoin']['usd']:,.0f}  ETH: ${cg['ethereum']['usd']:,.0f}")
     except Exception as e:
         print(f"CoinGecko failed: {e}")
 
@@ -119,22 +140,23 @@ if HAS_REQ:
 price_display = {}  # sym -> display string
 
 for t in TICKERS:
-    sym = t["sym"]
-    yfsym = t.get("yf")
+    sym   = t["sym"]
+    # HUT.TO uses its own yfinance fetch; cryptos key by sym; others by yf field
+    if sym == "HUT.TO":
+        yfkey = "HUT.TO"
+    elif t.get("crypto"):
+        yfkey = sym
+    else:
+        yfkey = t.get("yf")
 
-    # Resolve live data
-    key = sym if t.get("crypto") else yfsym
-    if key and key in live_prices:
-        p, ch = live_prices[key]
+    if yfkey and yfkey in live_prices:
+        p, ch24 = live_prices[yfkey]
         if p and p > 0:
             t["price"] = p
-        if ch is not None:
-            t["ch24"] = ch
-        # Mirror HUT change → HUT.TO
-        if sym == "HUT" and ch is not None:
-            for t2 in TICKERS:
-                if t2["sym"] == "HUT.TO":
-                    t2["ch24"] = ch
+        if ch24 is not None:
+            t["ch24"] = ch24
+    if yfkey and yfkey in ch7_map:
+        t["ch7"] = ch7_map[yfkey]
 
     # Build display string
     p = t["price"]
