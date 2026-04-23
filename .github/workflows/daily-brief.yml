@@ -29,11 +29,13 @@ jobs:
 
       - name: Generate index.html
         run: python generate.py
+        env:
+          TZ: America/Edmonton
 
       - name: Commit and push
         run: |
           git config user.name  "GitHub Actions"
           git config user.email "actions@github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "Daily brief $(date +%Y-%m-%d)"
+          git diff --cached --quiet || git commit -m "Daily brief $(TZ=America/Edmonton date +%Y-%m-%d)"
           git push
