@@ -86,41 +86,48 @@ if HAS_YF:
     # All yfinance symbols — HUT.TO fetched independently (CAD, different from HUT USD)
     stock_syms = list({t["yf"] for t in TICKERS if t.get("yf")}) + ["HUT.TO"]
 
-    # 1. Current price + 24h change via fast_info (updates ~15 min during market hours)
+    # 1. Current price via fast_info (updates ~15 min during market hours)
     print("Fetching current prices via fast_info...")
+    current_price = {}   # yfSym -> float
     for ysym in stock_syms:
         try:
-            fi         = yf.Ticker(ysym).fast_info
-            price      = fi.last_price
-            prev_close = fi.previous_close
+            price = yf.Ticker(ysym).fast_info.last_price
             if price and price > 0:
-                ch24 = (price - prev_close) / prev_close * 100 if (prev_close and prev_close > 0) else None
-                live_prices[ysym] = (price, ch24)
-                tag = f"{ch24:+.2f}%" if ch24 is not None else "n/a"
-                print(f"  {ysym}: {price:.2f}  24h={tag}")
+                current_price[ysym] = price
+                print(f"  {ysym}: {price:.2f}")
         except Exception as e:
             print(f"  {ysym} fast_info error: {e}")
 
-    # 2. 7-day change via 10-day daily history
-    print("Fetching 7-day history...")
+    # 2. Historical closes: 10 trading days, auto_adjust=False to match Yahoo Finance prices
+    print("Fetching historical closes (10d, unadjusted)...")
     try:
-        raw    = yf.download(stock_syms, period="10d", progress=False, auto_adjust=True)
+        raw    = yf.download(stock_syms, period="10d", progress=False, auto_adjust=False)
         closes = raw["Close"]
-        # yfinance returns a Series (not DataFrame) when only 1 symbol — normalise
-        if hasattr(closes, "squeeze") and len(stock_syms) == 1:
+        if hasattr(closes, "ndim") and closes.ndim == 1:
             closes = closes.to_frame(name=stock_syms[0])
         for ysym in stock_syms:
             try:
                 series = (closes[ysym] if ysym in closes.columns else closes.squeeze()).dropna()
-                if len(series) >= 6:
-                    p_now = live_prices.get(ysym, (None,))[0] or float(series.iloc[-1])
-                    p_7d  = float(series.iloc[-6])   # ~5 trading days ≈ 1 calendar week
+                if len(series) == 0:
+                    continue
+                p_now  = current_price.get(ysym)
+                # Yesterday's close = last row in daily history (today not closed yet)
+                p_prev = float(series.iloc[-1])
+                if p_now and p_now > 0 and p_prev > 0:
+                    ch24 = (p_now - p_prev) / p_prev * 100
+                    live_prices[ysym] = (p_now, ch24)
+                    print(f"  {ysym}: price={p_now:.2f}  prev_close={p_prev:.2f}  24h={ch24:+.2f}%")
+                elif p_now and p_now > 0:
+                    live_prices[ysym] = (p_now, None)
+                # 7-day: compare current price to close ~5 trading days ago
+                if len(series) >= 6 and p_now and p_now > 0:
+                    p_7d = float(series.iloc[-6])
                     ch7_map[ysym] = (p_now - p_7d) / p_7d * 100
-                    print(f"  {ysym} 7d: {ch7_map[ysym]:+.2f}%")
+                    print(f"  {ysym} 7d: prev={p_7d:.2f}  ch7={ch7_map[ysym]:+.2f}%")
             except Exception as e:
-                print(f"  {ysym} 7d error: {e}")
+                print(f"  {ysym} history error: {e}")
     except Exception as e:
-        print(f"7-day history download failed: {e}")
+        print(f"Historical download failed: {e}")
 
 # ── Fetch live crypto via CoinGecko (free, no key) ────────────────────────────
 if HAS_REQ:
