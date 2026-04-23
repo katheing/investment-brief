@@ -78,31 +78,25 @@ RISKS = [
     {"icon":"🔥","title":"NBIS 高烧钱 + 高估值风险",    "body":"P/S 70x，Q4 净亏 $250M，LT 债务 $4.1B，每季 CapEx 超 $2B。若 AI 云需求放缓，高估值可能快速回调。"},
 ]
 
-# ── Fetch live stock prices via yfinance ──────────────────────────────────────
+# ── Fetch live stock prices via yfinance fast_info ────────────────────────────
 live_prices = {}  # sym -> (price, pct_change)
 
 if HAS_YF:
     yf_syms = [t["yf"] for t in TICKERS if t.get("yf")]
-    print(f"Fetching yfinance: {yf_syms}")
-    try:
-        raw = yf.download(yf_syms, period="2d", progress=False, auto_adjust=True)
-        close = raw["Close"]
-        for ysym in yf_syms:
-            try:
-                col = close[ysym] if ysym in close.columns else close
-                prices_series = col.dropna()
-                if len(prices_series) >= 2:
-                    p    = float(prices_series.iloc[-1])
-                    prev = float(prices_series.iloc[-2])
-                    pct  = (p - prev) / prev * 100
-                    live_prices[ysym] = (p, pct)
-                    print(f"  {ysym}: ${p:.2f} ({pct:+.2f}%)")
-                elif len(prices_series) == 1:
-                    live_prices[ysym] = (float(prices_series.iloc[-1]), None)
-            except Exception as e:
-                print(f"  {ysym} parse error: {e}")
-    except Exception as e:
-        print(f"yfinance download failed: {e}")
+    print(f"Fetching yfinance fast_info for: {yf_syms}")
+    for ysym in yf_syms:
+        try:
+            fi = yf.Ticker(ysym).fast_info
+            price      = fi.last_price
+            prev_close = fi.previous_close
+            if price and price > 0 and prev_close and prev_close > 0:
+                pct = (price - prev_close) / prev_close * 100
+                live_prices[ysym] = (price, pct)
+                print(f"  {ysym}: ${price:.2f} ({pct:+.2f}%)")
+            elif price and price > 0:
+                live_prices[ysym] = (price, None)
+        except Exception as e:
+            print(f"  {ysym} fast_info error: {e}")
 
 # ── Fetch live crypto via CoinGecko (free, no key) ────────────────────────────
 if HAS_REQ:
