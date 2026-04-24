@@ -36,7 +36,7 @@ jobs:
       - name: 生成完整早报（价格 + AI 分析）
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: python generate_prices.py
+        run: python generate.py
 
       - name: 提交并推送 data.json
         run: |
