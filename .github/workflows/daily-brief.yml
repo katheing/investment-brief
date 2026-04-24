@@ -1,41 +1,53 @@
-name: Daily Investment Brief
+# Emily 的投资早报 — 每日完整自动更新
+# 文件位置：.github/workflows/daily.yml
+#
+# 每天早上自动运行：
+#   → yfinance 抓取最新价格
+#   → Gemini AI 生成中文分析文字（免费）
+#   → 保存 data.json → GitHub Pages 展示完整早报
+
+name: 每日早报更新
 
 on:
   schedule:
-    # 卡尔加里 7:30 AM MDT (夏令时 Mar-Nov) = 13:30 UTC
-    - cron: '0 14 * * 1-5'   # 8:00 AM MDT
-    # 冬令时改成 '0 15 * * 1-5'
-    # 冬天把上面那行改成 '30 14 * * 1-5' 即可
-  workflow_dispatch:          # 也可以手动触发
+    - cron: '0 14 * * 1-5'   # 周一到周五 7:00 AM PT（夏令时）
+  workflow_dispatch:           # 支持手动触发（用于测试）
 
 permissions:
   contents: write
 
 jobs:
-  generate:
+  generate-brief:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout
+      - name: 拉取仓库
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: 配置 Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
-        run: pip install yfinance requests
+      - name: 安装依赖
+        run: pip install yfinance pytz requests --quiet
 
-      - name: Generate index.html
-        run: python generate.py
+      - name: 生成完整早报（价格 + AI 分析）
         env:
-          TZ: America/Edmonton
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python generate_prices.py
 
-      - name: Commit and push
+      - name: 提交并推送 data.json
         run: |
-          git config user.name  "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add index.html
-          git diff --cached --quiet || git commit -m "Daily brief $(TZ=America/Edmonton date +%Y-%m-%d)"
-          git push
+          git config user.name  "Emily's Brief Bot 📊"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          if git diff --cached --quiet; then
+            echo "无变化，跳过提交"
+          else
+            TIMESTAMP=$(TZ='America/Vancouver' date +'%Y-%m-%d %H:%M PT')
+            git commit -m "📊 每日早报更新 ${TIMESTAMP}"
+            git push
+            echo "✅ data.json 已推送"
+          fi
