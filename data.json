@@ -1,79 +1,79 @@
 {
-  "updated_at": "2026-11-20 14:36 PT",
+  "updated_at": "2026-11-23 18:21 PT",
   "market_pulse": "",
   "market_sentiment": "震荡",
-  "usdcad": 1.4353,
+  "usdcad": 1.4361,
   "tickers": {
     "HUT": {
-      "price": 45.95,
-      "ch1d": -17.65,
-      "ch5d": -20.18,
+      "price": NaN,
+      "ch1d": NaN,
+      "ch5d": NaN,
       "note": ""
     },
     "IREN": {
-      "price": 11.82,
-      "ch1d": -17.97,
-      "ch5d": -34.95,
+      "price": NaN,
+      "ch1d": NaN,
+      "ch5d": NaN,
       "note": ""
     },
     "CIFR": {
-      "price": 5.435,
-      "ch1d": -16.13,
-      "ch5d": -20.77,
+      "price": NaN,
+      "ch1d": NaN,
+      "ch5d": NaN,
       "note": ""
     },
     "WULF": {
-      "price": 9.85,
-      "ch1d": -14.94,
-      "ch5d": -21.95,
+      "price": NaN,
+      "ch1d": NaN,
+      "ch5d": NaN,
       "note": ""
     },
     "CRWV": {
-      "price": 39.51,
-      "ch1d": -12.02,
-      "ch5d": -25.64,
+      "price": NaN,
+      "ch1d": NaN,
+      "ch5d": NaN,
       "note": ""
     },
     "NBIS": {
-      "price": 81.31,
-      "ch1d": -16.11,
-      "ch5d": -29.83,
+      "price": NaN,
+      "ch1d": NaN,
+      "ch5d": NaN,
       "note": ""
     },
     "SPY": {
-      "price": 689.81,
-      "ch1d": -3.64,
-      "ch5d": -8.56,
+      "price": NaN,
+      "ch1d": NaN,
+      "ch5d": NaN,
       "note": ""
     },
     "QQQ": {
-      "price": 608.45,
-      "ch1d": -5.67,
-      "ch5d": -10.51,
+      "price": NaN,
+      "ch1d": NaN,
+      "ch5d": NaN,
       "note": ""
     },
     "VIX": {
-      "price": 35.89,
-      "ch1d": 26.2,
-      "ch5d": 85.96,
+      "price": 26.62,
+      "ch1d": -25.83,
+      "ch5d": 16.19,
       "note": ""
     },
     "BTC": {
-      "price": 58682.1797,
-      "ch1d": -5.2,
-      "ch5d": -10.14,
+      "price": 61502.4492,
+      "ch1d": 0.56,
+      "ch5d": -2.36,
       "note": ""
     },
     "ETH": {
-      "price": 1615.51,
-      "ch1d": -7.96,
-      "ch5d": -11.99,
+      "price": 1718.76,
+      "ch1d": -0.13,
+      "ch5d": -3.15,
       "note": ""
     },
     "HUT.TO": {
-      "price": 65.88,
-      "ch1d": -17.73,
-      "ch5d": -19.69,
+      "price": 73.83,
+      "ch1d": 12.07,
+      "ch5d": -3.01,
       "note": ""
     }
   },
