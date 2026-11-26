@@ -1,8 +1,8 @@
 {
-  "updated_at": "2026-11-25 15:51 PT",
+  "updated_at": "2026-11-26 15:41 PT",
   "market_pulse": "",
   "market_sentiment": "震荡",
-  "usdcad": 1.421,
+  "usdcad": 1.4242,
   "tickers": {
     "HUT": {
       "price": 48.83,
@@ -53,27 +53,27 @@
       "note": ""
     },
     "VIX": {
-      "price": 28.29,
-      "ch1d": 7.32,
-      "ch5d": 15.19,
+      "price": 26.8,
+      "ch1d": -5.27,
+      "ch5d": -5.77,
       "note": ""
     },
     "BTC": {
-      "price": 60104.75,
-      "ch1d": 0.6,
-      "ch5d": 2.22,
+      "price": 60501.7617,
+      "ch1d": 0.2,
+      "ch5d": 0.68,
       "note": ""
     },
     "ETH": {
-      "price": 1685.79,
-      "ch1d": 0.48,
-      "ch5d": 4.1,
+      "price": 1694.58,
+      "ch1d": 0.23,
+      "ch5d": 0.74,
       "note": ""
     },
     "HUT.TO": {
-      "price": 69.48,
-      "ch1d": 0.99,
-      "ch5d": -15.14,
+      "price": 70.5,
+      "ch1d": 1.47,
+      "ch5d": -11.96,
       "note": ""
     }
   },
